@@ -1,0 +1,109 @@
+# Cleaning datasets with COVID19 case information (confirmed cases, deaths, recovered, active, etc.)
+#   Looking at State- and County-Level information:
+#   Data is taken from Kaggle datasets or from original sources referenced from Kaggle datasets
+
+#   Important note: for this dataset, just taking the most current numbers (not looking at trajectory over time)
+
+
+#### Load packages ##############
+#library(tidyr) #for general data wrangling etc
+library(tidyverse) #for general data wrangling etc
+library(plyr) #for other general data wrangling etc (e.g. join_all)
+library(dplyr) #for general data wrangling etc
+library(lme4) #for linear models
+library(ggplot2) #for graphing
+library(Hmisc) #for viewing metadata, rcorr (p-values matrix), and other helpful things
+  #also can use for some methods of imputing missing data
+library(broom) #for turning summaries of models into tidy tibbles
+library(httr) #for reading in excel files off the internet or something
+library(stringr) #for certain functions acting on strings/character vectors
+library(tibble) #useful for some dealing with wrangling data
+library(sjlabelled) #for labelled data and labelling data
+library(VIM) #for plotting missing values
+library(viridis) #for color/fill scale for graphing
+library(mi) #has multiple imputation methods
+library(betareg) #need for mi imputation methods
+
+
+
+#### US numbers (tests, cases, deaths, recovered, etc.): #######
+
+# cases and deaths by state and county US:
+nyt.cases.deaths.list <- "~/UNCOVER/New_York_Times/covid-19-county-level-data.csv"
+#NOTE: includes multiple dates - info from former days as well as current
+#called "date" (#1 in df list)
+# confirmed and recovered cases, US and global:
+cases.recov.pop.list <- c("~/UNCOVER/johns_hopkins_csse/johns-hopkins-covid-19-daily-dashboard-cases.csv",
+                          "~/UNCOVER/johns_hopkins_csse/2019-novel-coronavirus-covid-19-2019-ncov-data-repository-confirmed-deaths-in-the-us.csv")
+#***^ daily dashboard cases gives US states AND county/city for confirmed / deaths / recovered / active 
+#NOTE: just has CURRENT info, not former days' info
+#called "last_update" and includes timestamp as well (#2 in df list)
+#***^ ncov data repository confirmed deaths in the US gives for US state/territory and some cities/counties (col: admin2) deaths due to COVID19 AND population # info
+#^note: fips here seems to mean either county or state fips, and admin2 indicates whether county or city info is given or it is "Unassigned" and just state info
+#Note: date called "date" but is MISSING for all (#3 in df list) <- just want population info though
+# for just NY in USA:
+ny.tests.cases.list <- "~/UNCOVER/ny_dept_of_health/new-york-state-statewide-covid-19-testing.csv"
+#^ the only US testing info I could find at a state/county level (could find whole-US info)
+#NOTE: includes multiple dates - info from former days as well as current
+#called "test_date" (#4 in df list)
+
+
+# full list of all:
+us.tests.cases.deaths.recov.list <- c(nyt.cases.deaths.list, cases.recov.pop.list, ny.tests.cases.list)
+# read in as df's:
+us.tests.cases.deaths.recov.df <- lapply(us.tests.cases.deaths.recov.list, read.csv)
+
+
+## Keep only US-parts of international ones:
+us.tests.cases.deaths.recov.df[[2]] <- dplyr::filter(us.tests.cases.deaths.recov.df[[2]],country_region=="US")
+
+
+## Keep only needed parts to supply population info from #4:
+us.tests.cases.deaths.recov.df[[3]] <- dplyr::select(us.tests.cases.deaths.recov.df[[3]],one_of(c("fips","admin2","province_state","population")))
+
+
+## Rename some vars etc. to be comparable:
+us.tests.cases.deaths.recov.df[[1]] <- dplyr::rename(us.tests.cases.deaths.recov.df[[1]],county_fips=fips) #rename var, new name on left old name on right
+us.tests.cases.deaths.recov.df[[1]] <- dplyr::rename(us.tests.cases.deaths.recov.df[[1]],confirmed_cases=cases) #rename var, new name on left old name on right
+us.tests.cases.deaths.recov.df[[2]] <- dplyr::rename(us.tests.cases.deaths.recov.df[[2]],confirmed_cases=confirmed) #rename var, new name on left old name on right
+us.tests.cases.deaths.recov.df[[2]] <- dplyr::rename(us.tests.cases.deaths.recov.df[[2]],state=province_state) #rename var, new name on left old name on right
+us.tests.cases.deaths.recov.df[[2]] <- dplyr::rename(us.tests.cases.deaths.recov.df[[2]],county=admin2) #rename var, new name on left old name on right
+us.tests.cases.deaths.recov.df[[3]] <- dplyr::rename(us.tests.cases.deaths.recov.df[[3]],state=province_state) #rename var, new name on left old name on right
+us.tests.cases.deaths.recov.df[[3]] <- dplyr::rename(us.tests.cases.deaths.recov.df[[3]],county=admin2) #rename var, new name on left old name on right
+
+
+## Fix up "date" variables:
+us.tests.cases.deaths.recov.df[[1]]$date <- as.Date(us.tests.cases.deaths.recov.df[[1]]$date)
+us.tests.cases.deaths.recov.df[[2]]$last_update <- as.Date(us.tests.cases.deaths.recov.df[[2]]$last_update)
+us.tests.cases.deaths.recov.df[[4]]$test_date <- as.Date(us.tests.cases.deaths.recov.df[[4]]$test_date)
+
+
+## For those with multiple dates, keep only the most current one (max for dates):
+#keep in mind this may be different for different counties, hence the group_by
+us.tests.cases.deaths.recov.df[[1]] <- us.tests.cases.deaths.recov.df[[1]] %>% 
+  group_by(county) %>%
+  filter(date == max(date)) 
+us.tests.cases.deaths.recov.df[[4]] <- us.tests.cases.deaths.recov.df[[4]] %>% 
+  group_by(county) %>%
+  filter(test_date == max(test_date)) 
+
+
+## Now that dates are all current, can make version where get rid of date columns:
+nodate.us.tests.cases.deaths.recov.df <- us.tests.cases.deaths.recov.df
+nodate.us.tests.cases.deaths.recov.df[[1]] <- dplyr::select(us.tests.cases.deaths.recov.df[[1]], -date)
+nodate.us.tests.cases.deaths.recov.df[[2]] <- dplyr::select(us.tests.cases.deaths.recov.df[[2]], -last_update)
+nodate.us.tests.cases.deaths.recov.df[[4]] <- dplyr::select(us.tests.cases.deaths.recov.df[[4]], -test_date)
+
+# make sure are dataframes:
+for (i in 1:length(nodate.us.tests.cases.deaths.recov.df)) {
+  nodate.us.tests.cases.deaths.recov.df[[i]] <- as.data.frame(nodate.us.tests.cases.deaths.recov.df[[i]])
+}
+
+
+## Combine df's (join):
+master.nodate.us.tests.cases.deaths.recov.df <- join_all(nodate.us.tests.cases.deaths.recov.df, by = NULL, type = "full", match = "all")
+#by=NULL makes it join by all common vars, type=full makes it do a full_join, match=all makes it compatible to merge
+#NOTE: state indicated with "state" variable that gives full state name; also "county" gives full county name, and has county_fips and fips
+
+
+
