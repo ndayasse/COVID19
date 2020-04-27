@@ -1,4 +1,4 @@
-# Cleaning datasets with COVID19 case information (confirmed cases, deaths, recovered, active, etc.)
+# R Script for Cleaning datasets with COVID19 case information (confirmed cases, deaths, recovered, active, etc.)
 #   Looking at State- and County-Level information:
 #   Data is taken from Kaggle datasets or from original sources referenced from Kaggle datasets
 
