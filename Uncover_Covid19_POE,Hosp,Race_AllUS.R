@@ -43,7 +43,7 @@ poe.num.df <- dplyr::rename(poe.num.df,num_ports_of_entry=n) #rename variable
 
 
 # facility information/capacity
-esri.fac.df <- read.csv("~/Documents/Rdirectory/UNCOVER/esri_covid-19/esri_covid-19/definitive-healthcare-usa-hospital-beds.csv",
+esri.fac.df <- read.csv("~/UNCOVER/esri_covid-19/esri_covid-19/definitive-healthcare-usa-hospital-beds.csv",
                         na.strings=c("","****","NA"))
 #^ def healthcare usa hospital beds -- gives hospitals and # of staff and ICU beds for city, state, county, 
 #   with fips (county, state, general fips)
@@ -74,8 +74,8 @@ esri.fac.df <- join_all(esri.fac.list, by = NULL, type = "full", match = "all")
 
 
 # county demographics:
-us.county.demog <- read.csv("~/Documents/Rdirectory/UNCOVER/2016-us-election/county_facts.csv")
-col.labels <- base::t(read.csv("~/Documents/Rdirectory/UNCOVER/2016-us-election/county_facts_dictionary.csv"))
+us.county.demog <- read.csv("~/UNCOVER/2016-us-election/county_facts.csv")
+col.labels <- base::t(read.csv("~/UNCOVER/2016-us-election/county_facts_dictionary.csv"))
 #   ^gives the information of what each column is
 col.labels <- base::t(col.labels[2,])
 col.labels.first3 <- c("full fips","name of county or state or country","state 2-letter code")
@@ -115,23 +115,18 @@ us.county.state.info <- unique(us.county.state.info)
 #### US numbers (tests, cases, deaths, recovered, etc.): #######
 
 # cases and deaths by state and county US:
-nyt.cases.deaths.list <- "~/Documents/Rdirectory/UNCOVER/New_York_Times/covid-19-county-level-data.csv"
+nyt.cases.deaths.list <- "~/UNCOVER/New_York_Times/covid-19-county-level-data.csv"
 #NOTE: includes multiple dates - info from former days as well as current
 #called "date" (#1 in df list)
 # confirmed and recovered cases, US and global:
-cases.recov.pop.list <- c("~/Documents/Rdirectory/UNCOVER/johns_hopkins_csse/johns-hopkins-covid-19-daily-dashboard-cases.csv",
-                          "~/Documents/Rdirectory/UNCOVER/johns_hopkins_csse/2019-novel-coronavirus-covid-19-2019-ncov-data-repository-confirmed-deaths-in-the-us.csv")
+cases.recov.pop.list <- c("~/UNCOVER/johns_hopkins_csse/johns-hopkins-covid-19-daily-dashboard-cases.csv",
+                          "~/UNCOVER/johns_hopkins_csse/2019-novel-coronavirus-covid-19-2019-ncov-data-repository-confirmed-deaths-in-the-us.csv")
 #***^ daily dashboard cases gives US states AND county/city for confirmed / deaths / recovered / active 
 #NOTE: just has CURRENT info, not former days' info
 #called "last_update" and includes timestamp as well (#2 in df list)
 #***^ ncov data repository confirmed deaths in the US gives for US state/territory and some cities/counties (col: admin2) deaths due to COVID19 AND population # info
 #^note: fips here seems to mean either county or state fips, and admin2 indicates whether county or city info is given or it is "Unassigned" and just state info
 #Note: date called "date" but is MISSING for all (#3 in df list) <- just want population info though
-# for just NY in USA:
-ny.tests.cases.list <- "~/Documents/Rdirectory/UNCOVER/ny_dept_of_health/new-york-state-statewide-covid-19-testing.csv"
-#^ the only US testing info I could find at a state/county level (could find whole-US info)
-#NOTE: includes multiple dates - info from former days as well as current
-#called "test_date" (#4 in df list)
 
 
 # full list of all:
@@ -218,15 +213,6 @@ us.county.state.info.numbers.nodate.df <- sjlabelled::copy_labels(us.county.stat
 
 ### Examine missing data: #####
 
-# make a copy to trim down to just NY:
-ny.county.state.info.numbers.nodate.df <- us.county.state.info.numbers.nodate.df
-ny.county.state.info.numbers.nodate.df <- filter(ny.county.state.info.numbers.nodate.df,
-                                                 state_code=="NY")
-# now take out the last four cols that are only there for NY:
-us.county.state.info.numbers.nodate.df <- dplyr::select(us.county.state.info.numbers.nodate.df,
-                                                        -c(new_positives,cumulative_number_of_positives,
-                                                           total_number_of_tests_performed,
-                                                           cumulative_number_of_tests_performed))
 # Copy labels back over, since select always takes them out:
 us.county.state.info.numbers.nodate.df <- sjlabelled::copy_labels(us.county.state.info.numbers.nodate.df,
                                                                   us.county.demog)
