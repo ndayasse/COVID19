@@ -21,9 +21,9 @@ library(dplyr) #for general data wrangling etc (needs to be loaded after certain
 #### Read in numbers data, Cumulative Cases Only: #########
 
 international.numbers.time <- read.csv(
-  "~/Documents/Rdirectory/UNCOVER/johns_hopkins_csse/johns-hopkins-covid-19-daily-dashboard-cases-over-time.csv")
+  "~/UNCOVER/johns_hopkins_csse/johns-hopkins-covid-19-daily-dashboard-cases-over-time.csv")
 us.numbers.time <- read.csv(
-  "~/Documents/Rdirectory/UNCOVER/johns_hopkins_csse/2019-novel-coronavirus-covid-19-2019-ncov-data-repository-confirmed-cases-in-the-us.csv")
+  "~/UNCOVER/johns_hopkins_csse/2019-novel-coronavirus-covid-19-2019-ncov-data-repository-confirmed-cases-in-the-us.csv")
 
 ### Wrangle data: ######
 
@@ -115,7 +115,7 @@ ggsave("Covid19_CumCasesOverTime_FromDay0_8StatesCountries_28Apr2020_1850.png",w
 #### Read in numbers data, New Cases and Cum Cases: ######
 
 who.new.cum.cases.time <- read.csv(
-  "~/Documents/Rdirectory/UNCOVER/WHO/who-situation-reports-covid-19.csv")
+  "~/UNCOVER/WHO/who-situation-reports-covid-19.csv")
 
 ### Wrangle data: #####
 
