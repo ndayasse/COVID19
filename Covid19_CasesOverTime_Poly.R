@@ -1,5 +1,5 @@
 # Covid19 cases over time
-#   Comparing various states/countries and using Growth Curve Analysis
+#   Comparing various states/countries
 
 #### Load packages ##############
 #library(tidyr) #for general data wrangling etc
